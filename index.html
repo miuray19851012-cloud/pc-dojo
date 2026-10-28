@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PC発注道場</title>
+<meta name="description" content="ハイスペックPCをカスタム注文する前に、パーツ知識から業者とのやりとりまでを段階的に学ぶ学習アプリ">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#eceff4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e121b" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PC発注道場">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=JetBrains+Mono:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: a parts-catalog notebook — a rank header, then one working column; levels read like spec sheet rows. */
+:root {
+  --bg: #eceff4;
+  --surface: #ffffff;
+  --sunk: #e2e6ee;
+  --ink: #141a2b;
+  --muted: #586179;
+  --line: #d3d9e4;
+  --accent: #2847d0;
+  --accent-ink: #ffffff;
+  --accent-soft: #dfe5fb;
+  --xp: #d98200;
+  --xp-soft: #fbecd2;
+  --ok: #1d8548;
+  --ok-soft: #dcf1e4;
+  --bad: #c3352b;
+  --bad-soft: #f8e0dd;
+  --f-display: "Dela Gothic One", "Hiragino Kaku Gothic StdN", "Yu Gothic", sans-serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e121b; --surface: #161b27; --sunk: #1e2432; --ink: #e5e9f2; --muted: #96a0b6; --line: #2a3243;
+    --accent: #8197ff; --accent-ink: #0e121b; --accent-soft: #232c4d; --xp: #f3b23e; --xp-soft: #3a2c12;
+    --ok: #52c785; --ok-soft: #17321f; --bad: #ff7468; --bad-soft: #3d1a17; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e121b; --surface: #161b27; --sunk: #1e2432; --ink: #e5e9f2; --muted: #96a0b6; --line: #2a3243;
+  --accent: #8197ff; --accent-ink: #0e121b; --accent-soft: #232c4d; --xp: #f3b23e; --xp-soft: #3a2c12;
+  --ok: #52c785; --ok-soft: #17321f; --bad: #ff7468; --bad-soft: #3d1a17; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 56px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.35; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* header */
+.top { display: grid; grid-template-columns: 1fr auto; gap: 12px 20px; align-items: end; }
+.brand { display: flex; flex-direction: column; gap: 2px; }
+.brand small { font-size: 12px; letter-spacing: .12em; color: var(--muted); }
+.brand h1 { font-family: var(--f-display); font-weight: 400; font-size: 30px; letter-spacing: .02em; }
+.rank { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 220px; }
+.rank-line { display: flex; gap: 10px; align-items: baseline; }
+.rank-lv { font-family: var(--f-mono); font-weight: 700; font-size: 13px; color: var(--xp); background: var(--xp-soft); padding: 1px 8px; border-radius: 4px; }
+.rank-name { font-weight: 700; font-size: 17px; }
+.xpbar { width: 100%; height: 8px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
+.xpbar i { display: block; height: 100%; background: var(--xp); border-radius: 99px; transition: width .5s ease; }
+.xp-cap { font-size: 12px; color: var(--muted); }
+
+nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+nav.tabs button { background: none; border: 0; padding: 10px 14px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 700; }
+
+/* level map */
+.intro { color: var(--muted); max-width: 62ch; margin: 0; }
+.levels { display: flex; flex-direction: column; gap: 10px; }
+.lvl { display: grid; grid-template-columns: 64px 1fr auto; gap: 16px; align-items: center; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; width: 100%; }
+.lvl:hover:not([disabled]) { border-color: var(--accent); }
+.lvl[disabled] { cursor: not-allowed; opacity: .55; }
+.lvl-num { font-family: var(--f-display); font-size: 34px; line-height: 1; color: var(--accent); text-align: center; }
+.lvl[disabled] .lvl-num { color: var(--muted); }
+.lvl-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.lvl-tier { font-size: 12px; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
+.lvl-title { font-size: 18px; font-weight: 700; }
+.lvl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.dots { display: flex; gap: 5px; margin-top: 4px; }
+.dots i { width: 22px; height: 5px; border-radius: 3px; background: var(--sunk); }
+.dots i.on { background: var(--accent); }
+.chip { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.chip.clear { background: var(--ok-soft); color: var(--ok); }
+.chip.open { background: var(--accent-soft); color: var(--accent); }
+.chip.lock { background: var(--sunk); color: var(--muted); }
+
+/* panels */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.crumb { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.crumb button { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 500; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; color: var(--accent); font-weight: 700; }
+.panel h2 { font-size: 22px; }
+.lesson-list { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line); }
+.lesson-row { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; width: 100%; }
+.lesson-row:hover { background: var(--sunk); }
+.lesson-row .n { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.lesson-row .t { font-weight: 500; min-width: 0; }
+.tick { font-size: 12px; color: var(--ok); font-weight: 700; }
+.tick.todo { color: var(--muted); font-weight: 400; }
+.btn { border: 0; border-radius: 8px; padding: 11px 20px; font-weight: 700; background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: var(--sunk); color: var(--ink); }
+.btn.xp { background: var(--xp); color: #1b1200; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row.end { justify-content: space-between; }
+.note { font-size: 13px; color: var(--muted); }
+
+/* lesson content */
+.content { display: flex; flex-direction: column; gap: 14px; max-width: 66ch; }
+.content p { margin: 0; }
+.content ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.content b { color: var(--ink); }
+.content .k { font-family: var(--f-mono); font-size: 13px; background: var(--sunk); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+.tbl table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.tbl th, .tbl td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl th { background: var(--sunk); font-size: 12px; letter-spacing: .06em; color: var(--muted); }
+.tbl td:first-child { font-family: var(--f-mono); font-weight: 700; white-space: nowrap; }
+.say { border: 1px dashed var(--accent); border-radius: 10px; padding: 14px 16px; background: var(--accent-soft); display: flex; flex-direction: column; gap: 4px; }
+.say small { font-size: 12px; font-weight: 700; letter-spacing: .1em; color: var(--accent); }
+.say p { margin: 0; font-weight: 500; }
+.progress-steps { display: flex; gap: 6px; }
+.progress-steps i { flex: 1; height: 4px; border-radius: 2px; background: var(--sunk); }
+.progress-steps i.on { background: var(--accent); }
+
+/* quiz */
+.q { font-size: 18px; font-weight: 700; }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: start; }
+.opt:hover:not([disabled]) { border-color: var(--accent); }
+.opt .lt { font-family: var(--f-mono); font-weight: 700; color: var(--muted); }
+.opt.right { border-color: var(--ok); background: var(--ok-soft); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt[disabled] { cursor: default; }
+.exp { border-radius: 8px; padding: 12px 14px; background: var(--sunk); font-size: 14px; }
+.exp b.ok { color: var(--ok); } .exp b.ng { color: var(--bad); }
+.score { font-family: var(--f-display); font-size: 56px; line-height: 1; }
+.score small { font-family: var(--f-body); font-size: 18px; color: var(--muted); }
+
+/* level-up overlay */
+.levelup { position: fixed; inset: 0; background: color-mix(in srgb, var(--bg) 70%, transparent); display: grid; place-items: center; z-index: 20; padding: 16px; backdrop-filter: blur(3px); }
+.levelup .card { background: var(--surface); border: 2px solid var(--xp); border-radius: 14px; padding: 28px 32px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; max-width: 360px; animation: pop .45s cubic-bezier(.2,1.4,.4,1); }
+.levelup .big { font-family: var(--f-display); font-size: 36px; color: var(--xp); letter-spacing: .04em; }
+@keyframes pop { from { transform: scale(.85); opacity: .3; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .levelup .card { animation: none; } .xpbar i { transition: none; } }
+
+/* glossary */
+.search { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.gloss { display: flex; flex-direction: column; }
+.gloss div { display: grid; grid-template-columns: 170px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.gloss dt { font-weight: 700; margin: 0; }
+.gloss dd { margin: 0; color: var(--muted); font-size: 14px; min-width: 0; }
+.gloss .lv { font-family: var(--f-mono); font-size: 11px; color: var(--accent); display: block; font-weight: 500; }
+
+/* request maker */
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label { font-size: 13px; font-weight: 700; }
+.field input, .field select, .field textarea { padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; width: 100%; }
+.field textarea { min-height: 70px; resize: vertical; }
+.out { white-space: pre-wrap; background: var(--sunk); border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.8; margin: 0; overflow-x: auto; font-family: var(--f-body); }
+
+/* checklist */
+.cgroup { display: flex; flex-direction: column; gap: 2px; }
+.cgroup h3 { font-size: 14px; letter-spacing: .08em; color: var(--muted); padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.citem { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 9px 2px; align-items: start; cursor: pointer; }
+.citem input { width: 18px; height: 18px; margin: 4px 0 0; accent-color: var(--accent); }
+.citem span { min-width: 0; }
+.citem small { display: block; color: var(--muted); font-size: 13px; }
+.citem.done span > b { text-decoration: line-through; color: var(--muted); }
+
+@media (max-width: 600px) {
+  .top { grid-template-columns: 1fr; }
+  .rank { align-items: stretch; min-width: 0; }
+  .lvl { grid-template-columns: 44px 1fr; }
+  .lvl .chip { grid-column: 2; justify-self: start; }
+  .lvl-num { font-size: 26px; }
+  .panel { padding: 18px; }
+  .form { grid-template-columns: 1fr; }
+  nav.tabs { overflow-x: visible; gap: 0; }
+  nav.tabs button { flex: 1; padding: 10px 2px; font-size: 13px; }
+  .gloss div { grid-template-columns: 1fr; gap: 2px; }
+}
+</style>
+
+<style>
+html { -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+body { margin: 0; padding-top: max(20px, env(safe-area-inset-top, 0px)) !important; padding-bottom: max(56px, env(safe-area-inset-bottom, 0px)) !important; -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <small>ハイスペックPCを注文する前に</small>
+      <h1>PC発注道場</h1>
+    </div>
+    <div class="rank" id="rank"></div>
+  </header>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <main id="view"></main>
+</div>
+<div id="overlay"></div>
+
+<script>
+const LEVELS = [
+{ id: 1, tier: "LEVEL 1 · 入門", title: "パーツの地図", desc: "PCの中身と単位の読み方。まず名前と役割を覚える。",
+  lessons: [
+  { title: "PCは何でできているか", body: `
+<p>カスタム注文では、パーツを一つずつ選びます。まずは主要な9つの名前と役割を押さえましょう。机で仕事をする人にたとえると覚えやすくなります。</p>
+<div class="tbl"><table><tr><th>パーツ</th><th>役割</th><th>たとえ</th></tr>
+<tr><td>CPU</td><td>計算全般を担当する中心部品</td><td>作業する人の頭脳</td></tr>
+<tr><td>GPU</td><td>映像・3D・AI・一部の書き出しを担当。「グラボ」とも呼ぶ</td><td>絵と映像の専門職</td></tr>
+<tr><td>メモリ</td><td>作業中のデータを一時的に置く。電源を切ると消える</td><td>作業机の広さ</td></tr>
+<tr><td>ストレージ</td><td>SSD・HDD。データを保存しておく</td><td>本棚・倉庫</td></tr>
+<tr><td>マザーボード</td><td>全パーツをつなぐ基板</td><td>建物の床と配線</td></tr>
+<tr><td>電源ユニット</td><td>コンセントの電気を各パーツに配る</td><td>電気設備</td></tr>
+<tr><td>CPUクーラー</td><td>CPUの熱を逃がす</td><td>空調</td></tr>
+<tr><td>ケース</td><td>全体を入れる箱。冷却と拡張性に影響</td><td>建物そのもの</td></tr>
+<tr><td>OS</td><td>Windows など。ソフトを動かす土台</td><td>会社のルール</td></tr></table></div>
+<p>ハイスペック機で金額が大きいのは、たいてい <b>GPU → CPU → メモリ → ストレージ</b> の順です。</p>`,
+    say: "「主な用途は○○で、一番重いのは××の作業です。」まず用途から伝えるのが基本です。" },
+  { title: "数字と単位の読み方", body: `
+<p>見積書には数字と単位が並びます。意味がわかれば、どこにお金がかかっているかが読めるようになります。</p>
+<div class="tbl"><table><tr><th>表記</th><th>意味</th><th>どこで見るか</th></tr>
+<tr><td>5.7 GHz</td><td>クロック周波数。1秒あたりの動作回数。高いほど1つの処理が速い</td><td>CPU</td></tr>
+<tr><td>16コア / 32スレッド</td><td>同時に処理できる数。多いほど書き出し・レンダリングが速い</td><td>CPU</td></tr>
+<tr><td>64 GB</td><td>容量。1TB ≒ 1,000GB</td><td>メモリ・ストレージ</td></tr>
+<tr><td>32 GB VRAM</td><td>GPU専用メモリの容量</td><td>GPU</td></tr>
+<tr><td>7,000 MB/s</td><td>1秒あたりの読み書き速度</td><td>SSD</td></tr>
+<tr><td>1000 W</td><td>供給できる電力の上限</td><td>電源ユニット</td></tr></table></div>
+<p>数字が大きいほど良いとは限りません。たとえばCPUは、コア数を増やすとクロックが下がる傾向があります。<b>自分の作業で効く数字はどれか</b>を知るのが、このアプリの目標です。</p>`,
+    say: "「この構成で、自分の作業に一番効いているのはどのパーツですか？」と聞くと、業者の提案意図がわかります。" },
+  { title: "PCの買い方は4種類", body: `
+<ul>
+<li><b>既製品</b>：量販店に並ぶ完成品。構成は変えられない。</li>
+<li><b>BTO</b>（Build To Order）：メーカーやショップのベース構成から、パーツを選んで変更する方式。保証窓口が一本にまとまる。</li>
+<li><b>フルカスタム・オーダーメイド</b>：パーツを一から指定し、ショップが組み立てと動作検証をする。自由度が最も高い。</li>
+<li><b>自作</b>：自分でパーツを買って組む。保証はパーツごとにバラバラ。</li>
+</ul>
+<p>このほか、HP・Dell・Lenovoなどの<b>ワークステーション</b>製品があります。業務ソフトの動作認証や、技術者が来てくれるオンサイト保証が強みです。</p>
+<p>今回のように業者に注文するなら、BTOかフルカスタム、またはワークステーションのどれかです。どれでも、伝えるべきこと（用途・予算・優先順位）は同じです。</p>`,
+    say: "「BTOのベース構成から変えるのと、フルカスタムで一から組むのと、どちらがおすすめですか？」" }
+  ],
+  quiz: [
+    { q: "作業中のデータを一時的に置く「作業机」にあたるパーツは？", o: ["メモリ", "ストレージ", "CPU", "電源ユニット"], e: "メモリは作業机。広いほど多くのソフトや素材を同時に扱えます。電源を切ると中身は消えます。" },
+    { q: "3Dレンダリング、AI処理、映像エフェクトで特に重要になるパーツは？", o: ["GPU", "マザーボード", "ケース", "電源ユニット"], e: "GPUは並列計算が得意で、映像・3D・AIの処理を大きく速くします。" },
+    { q: "「BTO」の説明として正しいのは？", o: ["ベース構成からパーツを選んで注文する方式", "自分でパーツを買って組み立てる方式", "中古PCを整備した再生品", "月額で借りるレンタルPC"], e: "BTOは Build To Order（受注生産）。ベース構成を土台にカスタムします。" },
+    { q: "2TBはおよそ何GB？", o: ["2,000GB", "200GB", "20GB", "20,000GB"], e: "1TB ≒ 1,000GB。表記上の換算はこれで十分です。" },
+    { q: "電源ユニットの「1000W」が表すものは？", o: ["供給できる電力の上限", "常に消費している電力", "冷却性能", "データの転送速度"], e: "1000Wは「最大でここまで出せる」という上限です。常にその電力を使うわけではありません。" },
+    { q: "CPUの「16コア / 32スレッド」が多いと速くなる作業は？", o: ["動画の書き出しやレンダリング", "メールの送信", "Webページの表示", "キーボード入力"], e: "書き出しやレンダリングは作業を分割して同時に処理できるので、コア数が効きます。" }
+  ]},
+{ id: 2, tier: "LEVEL 2 · 初級", title: "主要4パーツの選び方", desc: "CPU・GPU・メモリ・ストレージの型番と容量の決め方。",
+  lessons: [
+  { title: "CPU：型番を読む", body: `
+<p>一般向けCPUは <b>Intel Core Ultra</b> と <b>AMD Ryzen</b> の2系統です。型番はルールを知れば読めます。</p>
+<div class="tbl"><table><tr><th>例</th><th>読み方</th></tr>
+<tr><td>Core Ultra 9 285K</td><td>9＝グレード（5・7・9。9が最上位）／285＝世代とモデル／K＝オーバークロック可能</td></tr>
+<tr><td>Core Ultra 9 285KF</td><td>F＝内蔵GPUなし。グラボを積むなら実用上の問題は少ない</td></tr>
+<tr><td>Ryzen 9 9950X</td><td>9＝グレード／9950＝9000シリーズの上位／X＝高クロック版</td></tr>
+<tr><td>Ryzen 9 9950X3D</td><td>X3D＝大容量キャッシュ搭載。ゲームに特に強い</td></tr></table></div>
+<ul>
+<li><b>書き出し・レンダリング・エンコード</b>が多い → コア数を優先。</li>
+<li><b>編集中の操作の軽さ</b>（タイムラインのスクラブなど）→ 1コアあたりの性能（シングル性能）も大事。</li>
+<li>CPUは1〜2年ごとに世代が変わります。「これは最新世代ですか」と確認しましょう。</li>
+</ul>`,
+    say: "「使うソフトでは、コア数とシングル性能のどちらが効きますか？」" },
+  { title: "GPU：VRAMが要", body: `
+<ul>
+<li><b>NVIDIA GeForce RTX</b>：一般・クリエイター向け。型番の上2桁が世代（50＝RTX 50シリーズ）、下2桁がグレード（90が最上位）。例：RTX 5090（VRAM 32GB）、RTX 5080（16GB）。Ti・SUPER は強化版。</li>
+<li><b>NVIDIA RTX PRO</b>：業務向け（旧Quadro）。VRAMが大きく、ECC対応や長期サポートがある。例：RTX PRO 6000 Blackwell（96GB）。</li>
+<li><b>AMD Radeon</b>：コスパが良いが、映像・3D・AIのソフトは NVIDIA の CUDA 前提のものが多い。</li>
+</ul>
+<p><b>VRAM（GPU専用メモリ）</b>は、高解像度の編集・カラーグレーディング・3D・AIで不足するとエラーや極端な遅さにつながります。ハイスペック機ではGPU選びの最重要ポイントです。</p>
+<p>ドライバには、ゲーム向けの Game Ready と、クリエイティブソフトで検証された Studio があります。制作用途なら Studio が基本です。</p>`,
+    say: "「VRAMは何GBですか？ドライバはStudio版で入れてもらえますか？」" },
+  { title: "メモリ：容量と枚数", body: `
+<p>現在の主流は <b>DDR5</b>。<span class="k">DDR5-5600</span> のような数字は速度（MT/s）です。</p>
+<div class="tbl"><table><tr><th>容量</th><th>目安</th></tr>
+<tr><td>32GB</td><td>一般的な事務・HD編集</td></tr>
+<tr><td>64GB</td><td>4K編集・写真の大量処理</td></tr>
+<tr><td>128GB</td><td>重い4K/8K編集、合成、3D、ローカルAI</td></tr>
+<tr><td>256GB〜</td><td>ワークステーション領域（Level 4で学ぶ）</td></tr></table></div>
+<ul>
+<li>一般向けマザーボードは<b>2枚挿し</b>が最も安定し、速度も出やすい。4枚挿しにすると速度設定が下がることがある。</li>
+<li>64GBなら 32GB×2、128GBなら 64GB×2 が基本形。</li>
+<li>あとから同じ型番を買い足すのは難しい。迷ったら最初に積み切るのも手。</li>
+<li>メモリやSSDの価格は変動が大きく、時期で数割変わることがある。</li>
+</ul>`,
+    say: "「メモリは何GB×何枚の構成ですか？速度設定（MT/s）はいくつで動かしますか？」" },
+  { title: "ストレージ：役割で分ける", body: `
+<div class="tbl"><table><tr><th>種類</th><th>速度の目安</th><th>向いている用途</th></tr>
+<tr><td>NVMe Gen5</td><td>約10,000〜14,000MB/s</td><td>キャッシュ・重い素材の作業用</td></tr>
+<tr><td>NVMe Gen4</td><td>約7,000MB/s</td><td>OS・ソフト・作業用。現在の標準</td></tr>
+<tr><td>SATA SSD</td><td>約550MB/s</td><td>サブの保存先</td></tr>
+<tr><td>HDD</td><td>約250MB/s</td><td>大容量の保存・アーカイブ</td></tr></table></div>
+<p>制作用PCでは、1台にまとめず<b>役割で分ける</b>のが定番です。</p>
+<ul>
+<li><b>システム用</b>（OS＋ソフト）：NVMe 1〜2TB</li>
+<li><b>作業用</b>（キャッシュ・素材）：高速NVMe 2〜8TB</li>
+<li><b>保存用</b>：大容量HDD、またはNAS</li>
+</ul>
+<p>SSDの寿命は <b>TBW</b>（総書き込み量）で表されます。キャッシュ用途では大きいものを選びます。</p>`,
+    say: "「SSDのメーカーと型番を見積に明記してください。」" }
+  ],
+  quiz: [
+    { q: "「Core Ultra 9 285K」末尾の「K」の意味は？", o: ["オーバークロック可能モデル", "内蔵GPUなし", "低消費電力版", "ノートPC用"], e: "K＝倍率ロック解除（オーバークロック可能）。内蔵GPUなしは「F」です。" },
+    { q: "書き出しやレンダリングを速くしたい。CPU選びで特に重視するのは？", o: ["コア数", "内蔵GPUの有無", "Wi-Fi対応", "対応メモリの色"], e: "処理を分割できる作業はコア数が効きます。" },
+    { q: "GPUの「VRAM」とは？", o: ["GPU専用のメモリ", "CPUのキャッシュ", "起動用のSSD", "電源の容量"], e: "VRAMはGPU専用メモリ。高解像度・3D・AIで不足すると致命的です。" },
+    { q: "DDR5メモリを64GB積む。一般向けマザーボードで最も安定しやすいのは？", o: ["32GB×2枚", "16GB×4枚", "8GB×8枚", "64GB×1枚"], e: "2枚挿しがデュアルチャネルで安定・高速。4枚挿しは速度が下がることがあり、1枚だと帯域が半分になります。" },
+    { q: "次のうち、最も読み書きが速いのは？", o: ["NVMe SSD（PCIe Gen5）", "NVMe SSD（PCIe Gen4）", "SATA SSD", "HDD"], e: "Gen5 NVMe が最速クラス。ただし発熱も大きく、ヒートシンクが必要です。" },
+    { q: "制作用PCのストレージの考え方として良いのは？", o: ["システム・作業・保存で役割を分ける", "大容量HDD1台にすべてまとめる", "SSDは1台だけにして節約する", "保存はUSBメモリに任せる"], e: "役割を分けると速度が出やすく、トラブル時の切り分けやバックアップもしやすくなります。" }
+  ]},
+{ id: 3, tier: "LEVEL 3 · 中級", title: "土台・電源・冷却", desc: "マザーボード、電源容量、冷却と静音。安定性を決めるパーツ。",
+  lessons: [
+  { title: "マザーボード：ソケットとチップセット", body: `
+<p>CPUとマザーボードは<b>ソケット</b>（差し込み口の形）が一致しないと使えません。同じソケットでも<b>チップセット</b>で機能が変わります。</p>
+<div class="tbl"><table><tr><th>CPU</th><th>ソケット</th><th>主なチップセット</th></tr>
+<tr><td>Intel Core Ultra 200S</td><td>LGA1851</td><td>Z890（上位）／B860</td></tr>
+<tr><td>AMD Ryzen 9000</td><td>AM5</td><td>X870E・X870（上位）／B850</td></tr></table></div>
+<p>見積でチェックするのは次の点です。</p>
+<ul>
+<li><b>M.2スロットの数</b>：NVMe SSDを何台つなげるか。</li>
+<li><b>PCIeスロット</b>：グラボ以外に挿したいカード（ビデオI/O、10GbEなど）があるか。</li>
+<li><b>端子</b>：USB4・Thunderbolt、有線LAN（2.5GbE / 10GbE）、Wi-Fi。</li>
+<li><b>サイズ</b>：ATX（標準）／Micro-ATX（小型）／E-ATX（大型）。</li>
+</ul>
+<p>一般向けCPUは <b>PCIeレーン</b>（データの通り道）の数が限られます。M.2を増やすと、ほかのスロットと帯域を共有して速度が落ちたり、使えなくなったりすることがあります。</p>`,
+    say: "「M.2を○台、PCIeカードを○枚挿したいです。帯域の共有で速度が落ちる組み合わせはありますか？」" },
+  { title: "電源：容量と規格", body: `
+<p>電源はトラブルが起きると全パーツを巻き込むので、安く済ませないパーツです。</p>
+<ul>
+<li><b>容量の目安</b>：構成全体の最大消費電力の <b>1.5倍前後</b>。余裕があると効率が良く、静かで長持ちします。</li>
+<li>RTX 5090クラスのGPUは単体で約575W。NVIDIAの推奨は <span class="k">1000W</span> 以上の電源です。</li>
+<li><b>80 PLUS認証</b>は変換効率の等級。Bronze ＜ Silver ＜ Gold ＜ Platinum ＜ Titanium。ハイエンドなら Gold 以上が目安。</li>
+<li><b>ATX 3.1 / 12V-2x6</b>：ハイエンドGPU向けの新しい給電規格。変換アダプタではなく、電源から直接このケーブルが出ているものが安心です。</li>
+<li>電源は保証が長い製品が多く、7〜12年保証もあります。保証年数は品質の目安になります。</li>
+</ul>`,
+    say: "「電源のメーカーと型番、80PLUSの等級、12V-2x6のネイティブ対応かを教えてください。」" },
+  { title: "冷却・静音・ケース", body: `
+<div class="tbl"><table><tr><th>方式</th><th>特徴</th></tr>
+<tr><td>空冷</td><td>大型ヒートシンク＋ファン。壊れにくく長寿命。大型だと高性能</td></tr>
+<tr><td>簡易水冷</td><td>AIOとも。280/360mmラジエーターで冷却力が高い。ポンプは消耗品（目安5〜6年）</td></tr>
+<tr><td>本格水冷</td><td>パーツごとに配管。最強だが高価で、メンテナンスが必要</td></tr></table></div>
+<ul>
+<li>Core Ultra 9・Ryzen 9 クラスは、大型空冷か360mm簡易水冷が目安。</li>
+<li><b>エアフロー</b>の基本は「前から吸って、後ろと上から出す」。</li>
+<li>ハイエンドGPUは長さ35cm前後のものもあり、ケースに入るか確認が必要。</li>
+<li>フルタワーのハイエンド機は15〜25kgになることもある。設置場所と搬入経路も考える。</li>
+<li>静音が必要な現場（編集室・グレーディングルーム）なら、そのことを最初に伝える。ファンの選び方や回転数の設定が変わります。</li>
+</ul>`,
+    say: "「編集室で使うので静音性を重視したいです。高負荷時の騒音はどのくらいですか？」" }
+  ],
+  quiz: [
+    { q: "CPUとマザーボードで必ず一致させる必要があるのは？", o: ["ソケット", "ケースの色", "メモリの枚数", "ファンの数"], e: "ソケットが違うと物理的に取り付けられません。" },
+    { q: "構成全体の最大消費電力が約600W。電源容量として妥当なのは？", o: ["850〜1000W", "600W", "450W", "2,000W以上が必須"], e: "最大消費電力の1.5倍前後が目安。ぴったりの600Wでは余裕がありません。" },
+    { q: "80 PLUS認証が示すものは？", o: ["電源の変換効率", "電源の最大容量", "ファンの静音性", "保証年数"], e: "コンセントからの電力を、どれだけ無駄なくパーツに届けられるかの等級です。" },
+    { q: "ハイエンドGPU向けの新しい給電コネクタ規格は？", o: ["12V-2x6", "SATA電源", "Molex", "USB-C PD"], e: "12V-2x6 は 12VHPWR の改良版。ATX 3.1 電源とセットで確認します。" },
+    { q: "ケース内のエアフローの基本は？", o: ["前から吸って後ろ・上から出す", "全部のファンを吸気にする", "ファンを止めて静音にする", "上から吸って前から出す"], e: "暖かい空気は上に昇るので、前吸気・後ろ上排気が基本です。" },
+    { q: "一般向けCPUでM.2 SSDを増やしすぎると起こりうることは？", o: ["帯域の共有で一部スロットが遅くなる・使えなくなる", "CPUのコア数が増える", "電源が不要になる", "自動でRAIDになる"], e: "一般向けCPUはPCIeレーンが限られるため、スロット同士で帯域を分け合います。" }
+  ]},
+{ id: 4, tier: "LEVEL 4 · 上級", title: "ワークステーション級", desc: "Threadripper・Xeon、ECC、プロ用GPU、拡張カードとデータ保護。",
+  lessons: [
+  { title: "一般向けとワークステーションの違い", body: `
+<p>一般向けCPUの上にある、業務用の領域です。</p>
+<div class="tbl"><table><tr><th>系統</th><th>プラットフォーム</th><th>特徴</th></tr>
+<tr><td>Threadripper</td><td>sTR5 / TRX50</td><td>4チャネルメモリ。HEDT（ハイエンドデスクトップ）</td></tr>
+<tr><td>Threadripper PRO</td><td>sTR5 / WRX90</td><td>8チャネルメモリ、最大96コア、PCIeレーンが非常に多い</td></tr>
+<tr><td>Xeon W</td><td>W790</td><td>Intelのワークステーション向け</td></tr></table></div>
+<p>こうした構成が必要になるのは、次のような場合です。</p>
+<ul>
+<li>メモリを <b>256GB超</b> 積みたい</li>
+<li>GPUを <b>2枚以上</b>、または拡張カードを多数挿したい</li>
+<li>NVMeを多数、帯域を落とさずに使いたい</li>
+<li>CPUレンダリングなど、コア数が直接効く作業が中心</li>
+</ul>
+<p>反対に、価格は大きく上がり、消費電力も増えます。編集の操作感だけなら、一般向け最上位のほうが軽快なこともあります。</p>`,
+    say: "「一般向けの最上位とThreadripperで迷っています。私の作業で差が出るのはどこですか？」" },
+  { title: "ECCメモリとOSの上限", body: `
+<ul>
+<li><b>ECC</b>：メモリ上のデータエラーを検出・訂正する機能。長時間のレンダリングや業務での安定性が上がる。</li>
+<li><b>RDIMM</b>：ワークステーションやサーバー用のメモリ。大容量にできるが、一般向けマザーボードでは使えない。</li>
+</ul>
+<p>大容量メモリを積むときは、OSの上限にも注意します。</p>
+<div class="tbl"><table><tr><th>Windows 11</th><th>メモリ上限</th><th>補足</th></tr>
+<tr><td>Home</td><td>128GB</td><td>BitLocker・リモートデスクトップ（ホスト）なし</td></tr>
+<tr><td>Pro</td><td>2TB</td><td>業務用の標準</td></tr>
+<tr><td>Pro for Workstations</td><td>6TB</td><td>CPU4基まで、ReFSなど</td></tr></table></div>
+<p>ハイスペック機は基本的に <b>Pro 以上</b>を選びます。使うソフトがLinux専用、またはLinux推奨の場合もあるので、OSはソフト側の要件から決めます。</p>`,
+    say: "「メモリはECC対応ですか？OSはWindows 11 Proでお願いします。」" },
+  { title: "プロ用GPU・ドライバ・ISV認証", body: `
+<p>GeForceと RTX PRO の違いは性能だけではありません。</p>
+<ul>
+<li><b>VRAM容量</b>：RTX PRO 6000 Blackwell は 96GB。大規模な3D、8K合成、AIに。</li>
+<li><b>ECC対応VRAM</b>と、長期間の安定したドライバ提供。</li>
+<li><b>ISV認証</b>：ソフトメーカーが「この構成で動作を確認・保証します」と認めたもの。業務ソフトでは認証構成以外はサポート対象外になることがある。</li>
+<li>複数枚を挿しやすい設計（排気が外に出るタイプなど）がある。</li>
+</ul>
+<p>Autodesk系の業務ソフトのように、OSのバージョンやGPUの型番まで厳密に指定された<b>認証構成</b>があるものもあります。高価なソフトを使うなら、PCより先にソフトの要件を確認するのが鉄則です。</p>`,
+    say: "「使うソフトの認証構成（または推奨構成）に合わせてください。資料をお送りします。」" },
+  { title: "拡張・ネットワーク・データ保護", body: `
+<ul>
+<li><b>10GbE / 25GbE</b>：NASやサーバーと高速に素材を共有する有線LAN。チームで作業するなら重要。</li>
+<li><b>Thunderbolt 5 / USB4</b>：高速な外付けストレージやドックに。</li>
+<li><b>ビデオI/Oカード</b>：SDIやHDMIでマスターモニターに正確な映像を出す。グレーディングや放送の現場で必要。</li>
+<li><b>UPS</b>（無停電電源装置）：停電時に安全にシャットダウンするための装置。</li>
+</ul>
+<div class="tbl"><table><tr><th>RAID</th><th>中身</th><th>注意</th></tr>
+<tr><td>RAID 0</td><td>複数台に分散。速い</td><td>1台壊れると全データ消失</td></tr>
+<tr><td>RAID 1</td><td>2台に同じデータ</td><td>容量は半分</td></tr>
+<tr><td>RAID 5 / 6</td><td>パリティで1台／2台の故障に耐える</td><td>NASでよく使う</td></tr>
+<tr><td>RAID 10</td><td>1と0の組み合わせ</td><td>速度と冗長性を両立</td></tr></table></div>
+<p><b>RAIDはバックアップではありません。</b>誤削除やウイルスはすべてのディスクに反映されます。「3-2-1ルール」（3つのコピー、2種類の媒体、1つは別の場所）が基本です。</p>`,
+    say: "「マスターモニター出力用にビデオI/Oカードを挿す予定です。スロットの空きと帯域は足りますか？」" }
+  ],
+  quiz: [
+    { q: "ECCメモリの特徴は？", o: ["メモリ上のエラーを検出・訂正できる", "速度が2倍になる", "容量が無制限になる", "発光して状態を知らせる"], e: "ECCは Error Correction Code。長時間処理の安定性を上げます。" },
+    { q: "Windows 11 Home で使えるメモリの上限は？", o: ["128GB", "2TB", "6TB", "64GB"], e: "Home は128GB、Pro は2TB、Pro for Workstations は6TBです。" },
+    { q: "Threadripper PRO や Xeon W を選ぶ理由として正しいのは？", o: ["大容量メモリと多数のPCIeレーンが必要", "ゲームのfpsを最大にしたい", "消費電力を下げたい", "費用を抑えたい"], e: "メモリ容量・拡張性・コア数が必要な業務向けです。費用と電力は増えます。" },
+    { q: "「ISV認証」とは？", o: ["ソフトメーカーが動作を確認・保証した構成", "省エネ性能の認証", "電源の効率規格", "防塵・防水の規格"], e: "ISV＝独立系ソフトウェアベンダー。業務ソフトのサポートを受けるうえで重要です。" },
+    { q: "RAIDについて正しいのは？", o: ["RAIDはバックアップの代わりにならない", "RAID 0 は1台壊れても大丈夫", "RAIDにすればバックアップは不要", "RAID 1 は冗長性がない"], e: "誤削除やウイルスはRAID全体に反映されます。バックアップは別に用意します。" },
+    { q: "SDIでマスターモニターに正確な映像を出したい。必要になりやすいのは？", o: ["ビデオI/Oカード", "Wi-Fiカード", "サウンドカード", "追加のCPUクーラー"], e: "GPUの出力ではなく、専用のビデオI/Oカードから正確な信号を出すのが一般的です。" }
+  ]},
+{ id: 5, tier: "LEVEL 5 · 実践", title: "業者とのやりとり", desc: "相談の仕方、見積書の読み方、保証、納品チェック。",
+  lessons: [
+  { title: "最初の相談で伝えること", body: `
+<p>業者が最も困るのは「とにかく速いのを」という依頼です。次の7つを伝えれば、提案の質が大きく上がります。</p>
+<ul>
+<li><b>使うソフト名とバージョン</b>（例：DaVinci Resolve 20、After Effects）</li>
+<li><b>一番重い作業の具体例</b>（例：8K RAW素材のカラーグレーディング、4K HDRの書き出し）</li>
+<li><b>予算</b>：上限と理想の両方</li>
+<li><b>優先順位</b>：速度・静音・安定性・拡張性のどれが一番か</li>
+<li><b>納期</b></li>
+<li><b>設置環境</b>：部屋の広さ、騒音、電源容量、ラックに入れるか</li>
+<li><b>既存の機材</b>：モニター、NAS、外付けストレージ、拡張カード</li>
+</ul>
+<p>このアプリの「依頼文メーカー」タブで、これらをまとめた相談文が作れます。</p>`,
+    say: "「予算は上限○○万円です。速度より安定性を優先したいです。」" },
+  { title: "見積書の読み方", body: `
+<ul>
+<li>全パーツに<b>メーカー名と型番</b>が書いてあるか。</li>
+<li><b>「同等品」「メーカー指定なし」</b>は、在庫や価格の都合で別製品になるという意味。性能や品質が下がることもあるので、重要なパーツ（SSD・電源・メモリ）は指定してもらう。</li>
+<li><b>別料金の項目</b>：組立費、動作検証費、OS、送料、延長保証、データ移行。</li>
+<li><b>税込か税抜か</b>。</li>
+<li><b>有効期限</b>：メモリやGPUは価格変動が大きく、数日〜2週間程度の期限がつくことがある。</li>
+</ul>
+<p>複数社から見積をとるときは、型番をそろえて比べないと比較になりません。</p>`,
+    say: "「『同等品』になっている部分のメーカーと型番を教えてください。」" },
+  { title: "保証とサポート", body: `
+<div class="tbl"><table><tr><th>方式</th><th>内容</th></tr>
+<tr><td>センドバック</td><td>自分でPCを送って修理してもらう。最も一般的</td></tr>
+<tr><td>ピックアップ</td><td>業者が回収に来て、修理後に返送する</td></tr>
+<tr><td>オンサイト</td><td>技術者が設置場所に来て修理する。業務用に強い</td></tr></table></div>
+<ul>
+<li>標準は1年が多い。仕事で使うなら3〜5年の延長保証を検討。</li>
+<li>修理期間中の<b>代替機</b>があるか。</li>
+<li><b>データは保証の対象外</b>。修理に出す前にバックアップする。</li>
+<li>自分でメモリやSSDを増設しても保証が続くか。</li>
+<li>問い合わせ窓口の対応時間（土日・夜間）。</li>
+</ul>`,
+    say: "「保証の方式と期間、修理中の代替機の有無、自分で増設した場合の扱いを教えてください。」" },
+  { title: "納品前後のチェック", body: `
+<p><b>納品前に頼むこと</b></p>
+<ul>
+<li>負荷テスト（エージング）の実施と、その時間・ツール。</li>
+<li>BIOSとドライバを最新にしてもらう。GPUは Studio ドライバなど用途に合わせる。</li>
+<li>不要なソフトを入れない。</li>
+<li>付属品（余ったケーブル、マザーボードの箱、説明書）を引き渡してもらう。</li>
+</ul>
+<p><b>受け取ったらすぐ</b></p>
+<ul>
+<li>タスクマネージャーで CPU・メモリ容量・GPU・ストレージが見積と一致するか確認。</li>
+<li>メモリの速度設定が見積どおりか（BIOSまたは確認ツール）。</li>
+<li>実際の作業で数時間動かす。異常は<b>初期不良の対応期間内</b>に連絡する。</li>
+</ul>`,
+    say: "「納品前に負荷テストとBIOS更新をお願いできますか？テスト結果も共有してください。」" }
+  ],
+  quiz: [
+    { q: "見積書に「SSD 2TB（メーカー指定なし）」とある。どうする？", o: ["メーカーと型番を指定・明記してもらう", "そのまま発注する", "容量だけ増やす", "気にしなくてよい"], e: "SSDは製品で速度や耐久性が大きく違います。型番を明記してもらいましょう。" },
+    { q: "「オンサイト保証」とは？", o: ["技術者が設置場所に来て修理する", "自分でPCを送って修理する", "店頭に持ち込む", "保証期間がない"], e: "業務を止めたくない場合に有効です。" },
+    { q: "修理に出す前に必ずやることは？", o: ["データのバックアップ", "メモリを増設する", "ケースを開けて掃除する", "BIOSを初期化する"], e: "データは保証の対象外。修理でストレージが初期化・交換されることもあります。" },
+    { q: "最初の相談で最も重要な情報は？", o: ["使うソフトと一番重い作業の具体例", "好きなケースの色", "前のPCの購入日", "キーボードの配列"], e: "用途がわかれば、どのパーツにお金をかけるべきか業者が判断できます。" },
+    { q: "納品後すぐに確認すべきことは？", o: ["搭載パーツが見積と一致しているか", "ゲームのベンチマークスコア", "壁紙の設定", "付属マウスの色"], e: "CPU・メモリ容量・GPU・ストレージを見積と照らし合わせます。" },
+    { q: "見積の有効期限が短く設定される主な理由は？", o: ["メモリやGPUなどのパーツ価格の変動が大きいから", "法律で決まっているから", "担当者の休暇のため", "OSの更新が毎週あるから"], e: "パーツ価格は需給で大きく動きます。期限内に判断するか、再見積を依頼します。" }
+  ]}
+];
+
+const RANKS = ["見習い", "入門修了", "初級者", "中級者", "上級者", "発注マスター"];
+
+const GLOSSARY = [
+  ["CPU", 1, "計算全般を担当する中心部品。Intel Core Ultra と AMD Ryzen が主流。"],
+  ["GPU / グラボ", 1, "映像・3D・AIを担当する部品。ハイスペック機で最も高価になりやすい。"],
+  ["メモリ (RAM)", 1, "作業中のデータを一時的に置く場所。電源を切ると消える。"],
+  ["ストレージ", 1, "SSDやHDDなど、データを保存する装置。"],
+  ["BTO", 1, "Build To Order。ベース構成からパーツを選んで注文する方式。"],
+  ["コア / スレッド", 1, "CPUが同時に処理できる単位。多いほど並列処理に強い。"],
+  ["クロック (GHz)", 1, "CPUの動作速度。高いほど1つの処理が速い。"],
+  ["VRAM", 2, "GPU専用のメモリ。高解像度・3D・AIで不足すると致命的。"],
+  ["DDR5", 2, "現行のメモリ規格。DDR5-5600 の数字は速度 (MT/s)。"],
+  ["デュアルチャネル", 2, "メモリ2枚で帯域を倍にする仕組み。一般向けは2枚挿しが基本。"],
+  ["NVMe / M.2", 2, "マザーボードに直接挿す高速SSDの規格と形状。"],
+  ["PCIe Gen4 / Gen5", 2, "接続規格の世代。Gen5はGen4の約2倍の帯域。"],
+  ["TBW", 2, "SSDの寿命の目安となる総書き込み量。"],
+  ["Studioドライバ", 2, "NVIDIAのクリエイティブソフト向けに検証されたドライバ。"],
+  ["CUDA", 2, "NVIDIA GPUで計算するための仕組み。多くの映像・AIソフトが前提にしている。"],
+  ["ソケット", 3, "CPUを挿す口の形。LGA1851（Intel）、AM5（AMD）など。"],
+  ["チップセット", 3, "マザーボードの機能を決める部品。Z890、X870E など。"],
+  ["PCIeレーン", 3, "データの通り道の数。足りないとスロットが帯域を共有する。"],
+  ["フォームファクタ", 3, "マザーボードやケースの大きさの規格。ATX、Micro-ATX など。"],
+  ["80 PLUS", 3, "電源の変換効率の認証。Bronze〜Titanium。"],
+  ["ATX 3.1 / 12V-2x6", 3, "ハイエンドGPU向けの電源規格と給電コネクタ。"],
+  ["簡易水冷 (AIO)", 3, "ポンプとラジエーターが一体になった水冷クーラー。"],
+  ["エアフロー", 3, "ケース内の空気の流れ。前吸気・後ろ上排気が基本。"],
+  ["HEDT", 4, "ハイエンドデスクトップ。Threadripper など一般向けの上の領域。"],
+  ["ワークステーション", 4, "業務用の高信頼PC。ECCやISV認証、手厚い保証が特徴。"],
+  ["ECC", 4, "メモリのエラーを検出・訂正する機能。"],
+  ["RDIMM", 4, "ワークステーション・サーバー用のメモリ。大容量にできる。"],
+  ["ISV認証", 4, "ソフトメーカーが動作を確認・保証した構成。"],
+  ["RTX PRO", 4, "NVIDIAの業務向けGPU（旧Quadro）。大容量VRAMとECC。"],
+  ["ビデオI/Oカード", 4, "SDI・HDMIで正確な映像信号を入出力する拡張カード。"],
+  ["10GbE", 4, "10ギガビットの有線LAN。NASとの素材共有に使う。"],
+  ["RAID", 4, "複数のディスクをまとめて速度や冗長性を得る仕組み。バックアップではない。"],
+  ["UPS", 4, "無停電電源装置。停電時に安全にシャットダウンするため。"],
+  ["3-2-1ルール", 4, "3つのコピー、2種類の媒体、1つは別の場所に置くバックアップの原則。"],
+  ["同等品", 5, "見積で型番が指定されていないこと。別製品になる可能性がある。"],
+  ["センドバック保証", 5, "自分でPCを送って修理してもらう保証方式。"],
+  ["オンサイト保証", 5, "技術者が設置場所に来て修理する保証方式。"],
+  ["エージング / 負荷テスト", 5, "納品前に高負荷で長時間動かし、初期不良を見つける作業。"],
+  ["初期不良", 5, "納品直後の故障。期間内なら交換などの対応が受けやすい。"]
+];
+
+const CHECKLIST = [
+  ["相談の前に", [
+    ["使うソフト名とバージョンを書き出した", "ソフトの推奨・認証構成も調べておく"],
+    ["一番重い作業を具体的に説明できる", "解像度・コーデック・尺・レイヤー数など"],
+    ["予算の上限と理想を決めた", ""],
+    ["速度・静音・安定・拡張の優先順位を決めた", ""],
+    ["設置場所（騒音・電源・スペース）を確認した", ""]
+  ]],
+  ["見積を受け取ったら", [
+    ["全パーツにメーカー名と型番が書いてある", "「同等品」「指定なし」は確認する"],
+    ["メモリの容量×枚数と速度が書いてある", ""],
+    ["GPUのVRAM容量を確認した", ""],
+    ["電源の容量・80PLUS等級・12V-2x6対応を確認した", ""],
+    ["ストレージの役割分け（システム・作業・保存）を確認した", ""],
+    ["OSの種類（Pro以上か）を確認した", ""],
+    ["別料金（組立・検証・OS・送料・延長保証）を確認した", ""],
+    ["税込か税抜か、見積の有効期限を確認した", ""]
+  ]],
+  ["発注の前に", [
+    ["保証の方式・期間・代替機の有無を確認した", ""],
+    ["自分で増設した場合の保証の扱いを確認した", ""],
+    ["負荷テストとBIOS・ドライバ更新を依頼した", ""],
+    ["納期を確認した", ""]
+  ]],
+  ["納品後", [
+    ["CPU・メモリ・GPU・ストレージが見積と一致している", "タスクマネージャーで確認"],
+    ["メモリの速度設定が見積どおり", ""],
+    ["実作業で数時間動かして異常がない", "初期不良の期間内に確認する"],
+    ["付属品を受け取った", "余ったケーブル、マザーボードの箱、説明書"]
+  ]]
+];
+
+/* ---------- state ---------- */
+const KEY = "pc-dojo-v1";
+const fresh = () => ({ xp: 0, read: {}, best: {}, cleared: {}, checks: {}, form: {} });
+let S = fresh();
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+let V = { tab: "map" };
+let quiz = null;
+let resetArmed = false;
+
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const clearedCount = () => LEVELS.filter((l) => S.cleared[l.id]).length;
+const unlocked = (id) => id === 1 || !!S.cleared[id - 1];
+const readCount = (lv) => lv.lessons.filter((_, i) => S.read[lv.id + "-" + i]).length;
+const MAX_XP = LEVELS.reduce((a, l) => a + l.lessons.length * 20 + l.quiz.length * 10 + 100, 0);
+
+function renderRank() {
+  const n = clearedCount();
+  const pct = Math.min(100, Math.round((S.xp / MAX_XP) * 100));
+  $("#rank").innerHTML = `
+    <div class="rank-line"><span class="rank-lv">Lv.${n}</span><span class="rank-name">${RANKS[n]}</span></div>
+    <div class="xpbar" aria-hidden="true"><i style="width:${pct}%"></i></div>
+    <div class="xp-cap mono">${S.xp} / ${MAX_XP} XP</div>`;
+}
+
+const TABS = [["map", "学習マップ"], ["gloss", "用語集"], ["req", "依頼文メーカー"], ["check", "発注チェック"]];
+function renderTabs() {
+  $("#tabs").innerHTML = TABS.map(([k, t]) =>
+    `<button role="tab" aria-selected="${V.tab === k}" data-tab="${k}">${t}</button>`).join("");
+}
+
+function go(v) { V = v; render(); window.scrollTo({ top: 0 }); }
+
+function render() {
+  renderRank(); renderTabs();
+  const m = $("#view");
+  if (V.tab === "map") m.innerHTML = V.level ? (V.lesson != null ? viewLesson() : V.quiz ? viewQuiz() : viewLevel()) : viewMap();
+  else if (V.tab === "gloss") m.innerHTML = viewGloss();
+  else if (V.tab === "req") { m.innerHTML = viewReq(); updateReq(); }
+  else if (V.tab === "check") m.innerHTML = viewCheck();
+}
+
+/* ---------- map ---------- */
+function viewMap() {
+  const rows = LEVELS.map((l) => {
+    const open = unlocked(l.id), done = S.cleared[l.id];
+    const chip = done ? `<span class="chip clear">クリア ${S.best[l.id]}/${l.quiz.length}</span>`
+      : open ? `<span class="chip open">挑戦中</span>` : `<span class="chip lock">Lv.${l.id - 1} クリアで解放</span>`;
+    const dots = l.lessons.map((_, i) => `<i class="${S.read[l.id + "-" + i] ? "on" : ""}"></i>`).join("");
+    return `<button class="lvl" data-level="${l.id}" ${open ? "" : "disabled"}>
+      <span class="lvl-num">${l.id}</span>
+      <span class="lvl-body"><span class="lvl-tier">${l.tier}</span><span class="lvl-title">${l.title}</span>
+      <span class="lvl-desc">${l.desc}</span><span class="dots">${dots}</span></span>${chip}</button>`;
+  }).join("");
+  return `<div style="display:flex;flex-direction:column;gap:16px">
+    <p class="intro">レッスンを読んで（+20XP）、確認テストで6問中5問以上正解するとレベルアップ。次のレベルが解放されます。全レベルをクリアすれば、業者と対等に話せるはずです。</p>
+    <div class="levels">${rows}</div>
+    <div class="row end"><span class="note">進み具合はこのブラウザに保存されます。</span>
+      <button class="btn ghost" data-act="reset">${resetArmed ? "本当にリセットする" : "進み具合をリセット"}</button></div></div>`;
+}
+
+function viewLevel() {
+  const l = LEVELS.find((x) => x.id === V.level);
+  const rows = l.lessons.map((ls, i) => {
+    const r = S.read[l.id + "-" + i];
+    return `<button class="lesson-row" data-lesson="${i}"><span class="n">${l.id}-${i + 1}</span><span class="t">${ls.title}</span>
+      <span class="tick ${r ? "" : "todo"}">${r ? "読了" : "未読"}</span></button>`;
+  }).join("");
+  const rc = readCount(l);
+  return `<section class="panel">
+    <div class="crumb"><button data-act="home">学習マップ</button><span>/</span><span>${l.tier}</span></div>
+    <div><div class="eyebrow">${l.tier}</div><h2>${l.title}</h2></div>
+    <p class="note" style="margin:0">${l.desc}</p>
+    <div class="lesson-list">${rows}</div>
+    <div class="row end">
+      <span class="note">${rc}/${l.lessons.length} レッスン読了${S.best[l.id] != null ? ` · テスト最高 ${S.best[l.id]}/${l.quiz.length}` : ""}</span>
+      <div class="row">
+        ${rc < l.lessons.length ? `<button class="btn ghost" data-lesson="${l.lessons.findIndex((_, i) => !S.read[l.id + "-" + i])}">続きを読む</button>` : ""}
+        <button class="btn xp" data-act="quiz">確認テストに挑戦</button>
+      </div>
+    </div></section>`;
+}
+
+function viewLesson() {
+  const l = LEVELS.find((x) => x.id === V.level), i = V.lesson, ls = l.lessons[i];
+  const done = S.read[l.id + "-" + i], last = i === l.lessons.length - 1;
+  const steps = l.lessons.map((_, k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("");
+  return `<article class="panel">
+    <div class="crumb"><button data-act="home">学習マップ</button><span>/</span><button data-act="level">${l.tier}</button></div>
+    <div class="progress-steps">${steps}</div>
+    <div><div class="eyebrow">LESSON ${l.id}-${i + 1}</div><h2>${ls.title}</h2></div>
+    <div class="content">${ls.body}</div>
+    <div class="say"><small>業者にはこう聞く</small><p>${ls.say}</p></div>
+    <div class="row end">
+      ${i > 0 ? `<button class="btn ghost" data-lesson="${i - 1}">前へ</button>` : `<span></span>`}
+      <button class="btn" data-act="read">${done ? "" : "読んだ +20XP · "}${last ? "確認テストへ" : "次のレッスン"}</button>
+    </div></article>`;
+}
+
+/* ---------- quiz ---------- */
+function startQuiz() {
+  const l = LEVELS.find((x) => x.id === V.level);
+  const qs = l.quiz.map((q) => {
+    const order = q.o.map((_, k) => k).sort(() => Math.random() - .5);
+    return { q: q.q, e: q.e, opts: order.map((k) => q.o[k]), ans: order.indexOf(0) };
+  }).sort(() => Math.random() - .5);
+  quiz = { qs, i: 0, picked: null, score: 0, done: false };
+  go({ tab: "map", level: l.id, quiz: true });
+}
+
+function viewQuiz() {
+  const l = LEVELS.find((x) => x.id === V.level);
+  if (quiz.done) {
+    const pass = quiz.score >= 5;
+    return `<section class="panel">
+      <div class="crumb"><button data-act="home">学習マップ</button><span>/</span><button data-act="level">${l.tier}</button><span>/</span><span>確認テスト</span></div>
+      <div class="eyebrow">${pass ? "合格" : "不合格（5問以上で合格）"}</div>
+      <div class="score mono">${quiz.score}<small> / ${quiz.qs.length} 問正解</small></div>
+      <p class="note" style="margin:0">${quiz.gain > 0 ? `+${quiz.gain} XP を獲得しました。` : "今回は自己ベストの更新がないため、XPの追加はありません。"}
+        ${pass ? (l.id < LEVELS.length ? `Level ${l.id + 1} が解放されています。` : "全レベルを修了しました。") : "解説を読み直して、もう一度挑戦しましょう。"}</p>
+      <div class="row">
+        <button class="btn ghost" data-act="quiz">もう一度挑戦</button>
+        ${pass && l.id < LEVELS.length ? `<button class="btn" data-next="${l.id + 1}">Level ${l.id + 1} へ進む</button>` : `<button class="btn" data-act="home">学習マップへ</button>`}
+      </div></section>`;
+  }
+  const q = quiz.qs[quiz.i], p = quiz.picked;
+  const opts = q.opts.map((o, k) => {
+    let cls = "";
+    if (p != null) { if (k === q.ans) cls = "right"; else if (k === p) cls = "wrong"; }
+    return `<button class="opt ${cls}" data-pick="${k}" ${p != null ? "disabled" : ""}><span class="lt">${"ABCD"[k]}</span><span>${o}</span></button>`;
+  }).join("");
+  const steps = quiz.qs.map((_, k) => `<i class="${k < quiz.i || (k === quiz.i && p != null) ? "on" : ""}"></i>`).join("");
+  return `<section class="panel">
+    <div class="crumb"><button data-act="home">学習マップ</button><span>/</span><button data-act="level">${l.tier}</button><span>/</span><span>確認テスト</span></div>
+    <div class="progress-steps">${steps}</div>
+    <div class="eyebrow mono">Q${quiz.i + 1} / ${quiz.qs.length}</div>
+    <div class="q">${q.q}</div>
+    <div class="opts">${opts}</div>
+    ${p != null ? `<div class="exp">${p === q.ans ? `<b class="ok">正解。</b>` : `<b class="ng">不正解。</b>正解は「${q.opts[q.ans]}」。`} ${q.e}</div>
+      <div class="row" style="justify-content:flex-end"><button class="btn" data-act="nextq">${quiz.i === quiz.qs.length - 1 ? "結果を見る" : "次の問題"}</button></div>` : ""}
+  </section>`;
+}
+
+function finishQuiz() {
+  const l = LEVELS.find((x) => x.id === V.level);
+  const prev = S.best[l.id] ?? 0;
+  let gain = Math.max(0, quiz.score - prev) * 10;
+  const pass = quiz.score >= 5, first = pass && !S.cleared[l.id];
+  if (first) { gain += 100; S.cleared[l.id] = true; }
+  S.best[l.id] = Math.max(prev, quiz.score);
+  S.xp += gain; quiz.gain = gain; quiz.done = true; save();
+  render();
+  if (first) levelUp();
+}
+
+function levelUp() {
+  const n = clearedCount();
+  $("#overlay").innerHTML = `<div class="levelup" data-act="closeup" role="dialog" aria-label="レベルアップ"><div class="card">
+    <div class="eyebrow">LEVEL UP</div><div class="big">Lv.${n}</div>
+    <div style="font-weight:700;font-size:18px">${RANKS[n]} になりました</div>
+    <p class="note" style="margin:0">${n < LEVELS.length ? `「${LEVELS[n].title}」が解放されました。` : "すべてのレベルを修了しました。依頼文メーカーで相談文を作ってみましょう。"}</p>
+    <button class="btn xp" data-act="closeup">続ける</button></div></div>`;
+}
+
+/* ---------- glossary ---------- */
+function viewGloss() {
+  return `<section class="panel"><div><div class="eyebrow">GLOSSARY</div><h2>用語集</h2></div>
+    <input class="search" id="gq" type="search" placeholder="用語をさがす（例：VRAM、保証）" aria-label="用語をさがす">
+    <dl class="gloss" id="glist">${glossRows("")}</dl></section>`;
+}
+function glossRows(q) {
+  const t = q.trim().toLowerCase();
+  const rows = GLOSSARY.filter(([w, , d]) => !t || (w + d).toLowerCase().includes(t));
+  if (!rows.length) return `<p class="note">「${esc(q)}」に一致する用語はありません。</p>`;
+  return rows.map(([w, lv, d]) => `<div><dt><span class="lv">LEVEL ${lv}</span>${w}</dt><dd>${d}</dd></div>`).join("");
+}
+
+/* ---------- request maker ---------- */
+const FIELDS = [
+  ["use", "用途", "input", "例：4K/8K映像のカラーグレーディングと合成", "4K/8K映像のカラーグレーディングと合成"],
+  ["soft", "使うソフトとバージョン", "input", "例：DaVinci Resolve 20、After Effects", "DaVinci Resolve 20、After Effects、Nuke"],
+  ["heavy", "一番重い作業の具体例", "textarea", "例：8K RAW素材にノイズ除去をかけた状態でのリアルタイム再生", "8K RAW素材にノイズ除去とグレードをかけた状態での再生、4K HDRの書き出し"],
+  ["budget", "予算（上限）", "input", "例：150万円（税込）", "150万円（税込）"],
+  ["prio", "最優先すること", "select", ["安定性", "処理速度", "静音性", "拡張性", "価格"], "安定性"],
+  ["os", "OS", "select", ["Windows 11 Pro", "Windows 11 Pro for Workstations", "Linux（ソフト要件に合わせる）", "相談したい"], "Windows 11 Pro"],
+  ["warranty", "希望する保証", "select", ["3年・センドバック", "3年・オンサイト", "5年・オンサイト", "相談したい"], "3年・オンサイト"],
+  ["due", "希望納期", "input", "例：12月中旬", "12月中旬"],
+  ["env", "設置環境・既存機材", "textarea", "例：編集室で使用。NAS（10GbE）とSDIのマスターモニターあり", "編集室で使用するため静音重視。10GbEのNASとSDI接続のマスターモニターあり"],
+  ["other", "その他の要望", "textarea", "例：見積は全パーツの型番を明記してほしい", ""]
+];
+function viewReq() {
+  const f = FIELDS.map(([k, lab, type, ph, def]) => {
+    const v = S.form[k] ?? (type === "select" ? def : (S.form.__touched ? "" : def));
+    const wide = type === "textarea" ? " wide" : "";
+    let ctl;
+    if (type === "select") ctl = `<select id="f-${k}" data-f="${k}">${ph.map((o) => `<option ${o === v ? "selected" : ""}>${o}</option>`).join("")}</select>`;
+    else if (type === "textarea") ctl = `<textarea id="f-${k}" data-f="${k}" placeholder="${esc(ph)}">${esc(v)}</textarea>`;
+    else ctl = `<input id="f-${k}" data-f="${k}" placeholder="${esc(ph)}" value="${esc(v)}">`;
+    return `<div class="field${wide}"><label for="f-${k}">${lab}</label>${ctl}</div>`;
+  }).join("");
+  return `<section class="panel"><div><div class="eyebrow">REQUEST</div><h2>依頼文メーカー</h2></div>
+    <p class="note" style="margin:0">入力すると、業者への最初の相談文ができあがります。記入例が入っているので、自分の内容に書き換えてください。</p>
+    <div class="form">${f}</div>
+    <div><div class="row end" style="margin-bottom:8px"><b>相談文</b><button class="btn" data-act="copy" id="copyBtn">コピー</button></div>
+    <pre class="out" id="reqOut"></pre></div></section>`;
+}
+function reqVal(k) { const el = document.getElementById("f-" + k); return el ? el.value.trim() : ""; }
+function updateReq() {
+  const g = (k) => reqVal(k) || "（未記入）";
+  const other = reqVal("other");
+  const txt = `お世話になります。カスタムPCの見積をお願いしたく、ご連絡しました。
+
+■ 用途
+${g("use")}
+
+■ 使用ソフト
+${g("soft")}
+
+■ 最も負荷の高い作業
+${g("heavy")}
+
+■ 条件
+・予算：${g("budget")}
+・最優先：${g("prio")}
+・OS：${g("os")}
+・保証：${g("warranty")}
+・希望納期：${g("due")}
+
+■ 設置環境・既存機材
+${g("env")}
+
+■ お願い
+・全パーツのメーカー名と型番を見積に明記してください（「同等品」の場合はその旨と候補を記載ください）。
+・組立費、動作検証費、OS、送料、保証の費用を分けて記載してください。
+・納品前の負荷テストと、BIOS・ドライバの最新化をお願いします。
+・使用ソフトの推奨・認証構成を踏まえたご提案をいただけると助かります。${other ? "\n・" + other : ""}
+
+よろしくお願いいたします。`;
+  const out = $("#reqOut"); if (out) out.textContent = txt;
+}
+
+/* ---------- checklist ---------- */
+function viewCheck() {
+  let total = 0, done = 0;
+  const groups = CHECKLIST.map(([h, items], gi) => {
+    const rows = items.map(([t, sub], ii) => {
+      const id = gi + "-" + ii, on = !!S.checks[id]; total++; if (on) done++;
+      return `<label class="citem ${on ? "done" : ""}" for="c-${id}"><input type="checkbox" id="c-${id}" data-check="${id}" ${on ? "checked" : ""}>
+        <span><b>${t}</b>${sub ? `<small>${sub}</small>` : ""}</span></label>`;
+    }).join("");
+    return `<div class="cgroup"><h3>${h}</h3>${rows}</div>`;
+  }).join("");
+  return `<section class="panel"><div class="row end"><div><div class="eyebrow">CHECKLIST</div><h2>発注チェック</h2></div>
+    <span class="mono" style="font-weight:700">${done} / ${total}</span></div>
+    <p class="note" style="margin:0">業者とのやりとりの各段階で確認する項目です。チェックはこのブラウザに保存されます。</p>${groups}</section>`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest("button, [data-act='closeup']"); if (!t) return;
+  if (t.dataset.tab) { quiz = null; resetArmed = false; return go({ tab: t.dataset.tab }); }
+  if (t.dataset.level) return go({ tab: "map", level: +t.dataset.level });
+  if (t.dataset.next) return go({ tab: "map", level: +t.dataset.next });
+  if (t.dataset.lesson != null && t.dataset.lesson !== "") return go({ tab: "map", level: V.level, lesson: +t.dataset.lesson });
+  if (t.dataset.pick != null && quiz && quiz.picked == null) {
+    const k = +t.dataset.pick; quiz.picked = k; if (k === quiz.qs[quiz.i].ans) quiz.score++; return render();
+  }
+  const a = t.dataset.act;
+  if (a === "home") { quiz = null; return go({ tab: "map" }); }
+  if (a === "level") { quiz = null; return go({ tab: "map", level: V.level }); }
+  if (a === "quiz") return startQuiz();
+  if (a === "read") {
+    const l = LEVELS.find((x) => x.id === V.level), key = l.id + "-" + V.lesson;
+    if (!S.read[key]) { S.read[key] = true; S.xp += 20; save(); }
+    if (V.lesson < l.lessons.length - 1) return go({ tab: "map", level: l.id, lesson: V.lesson + 1 });
+    return startQuiz();
+  }
+  if (a === "nextq") { if (quiz.i < quiz.qs.length - 1) { quiz.i++; quiz.picked = null; return render(); } return finishQuiz(); }
+  if (a === "closeup") { $("#overlay").innerHTML = ""; return; }
+  if (a === "reset") {
+    if (!resetArmed) { resetArmed = true; return render(); }
+    S = fresh(); save(); resetArmed = false; return render();
+  }
+  if (a === "copy") {
+    const txt = $("#reqOut").textContent, btn = $("#copyBtn");
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($("#reqOut")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "選択しました。⌘C でコピー"; };
+    try { navigator.clipboard.writeText(txt).then(() => { btn.textContent = "コピーしました"; setTimeout(() => (btn.textContent = "コピー"), 1800); }, fallback); } catch (e) { fallback(); }
+  }
+});
+document.addEventListener("input", (ev) => {
+  const t = ev.target;
+  if (t.id === "gq") { $("#glist").innerHTML = glossRows(t.value); return; }
+  if (t.dataset.f) { FIELDS.forEach(([k]) => (S.form[k] = reqVal(k))); save(); updateReq(); }
+});
+document.addEventListener("change", (ev) => {
+  const t = ev.target;
+  if (t.dataset.f) { FIELDS.forEach(([k]) => (S.form[k] = reqVal(k))); save(); updateReq(); }
+  if (t.dataset.check) { S.checks[t.dataset.check] = t.checked; save(); render(); }
+});
+
+render();
+</script>
+<script>
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+</script>
+</body>
+</html>
